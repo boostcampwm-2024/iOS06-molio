@@ -38,7 +38,6 @@ final class PlaylistDetailViewModel: ObservableObject {
         self.fetchPlaylistUseCase = fetchPlaylistUseCase
         
         if currentPlaylist != nil {
-            // CurrenPlaylist를 지정할 수 있음.
             self.currentPlaylist = currentPlaylist
             setupMusics()
         } else {
@@ -67,6 +66,31 @@ final class PlaylistDetailViewModel: ObservableObject {
         }
     }
     
+    // 곡 순서 변경 기능 추가
+    func moveMusic(fromOffsets source: IndexSet, toOffset destination: Int) {
+        guard let playlistID = currentPlaylist?.id else { return }
+        
+        let movedMusic = currentPlaylistMusics[source.first!] // ✅ 이동할 음악 가져오기
+        let fromIndex = source.first!
+        
+        // ✅ 로컬 데이터에서 순서 변경
+        currentPlaylistMusics.move(fromOffsets: source, toOffset: destination)
+
+        Task { [weak self] in
+            do {
+                // ✅ 서버에 순서 변경 요청
+                try await self?.managePlaylistUseCase.moveMusic(
+                    musicISRC: movedMusic.isrc,
+                    in: playlistID,
+                    fromIndex: fromIndex,
+                    toIndex: destination
+                )
+            } catch {
+                debugPrint("순서 변경 실패: \(error.localizedDescription)")
+            }
+        }
+    }
+
     func checkAppleMusicSubscription() {
         Task { @MainActor [weak self] in
             let isSubscriber = try? await self?.appleMusicUseCase.checkSubscription()

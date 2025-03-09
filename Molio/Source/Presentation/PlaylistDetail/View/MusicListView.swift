@@ -33,10 +33,12 @@ struct MusicListView: View {
                         .tint(.red)
                     }
             }
+            .onMove(perform: moveMusic)
         }
         .foregroundStyle(.white)
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
+        .environment(\.editMode, .constant(.active))
         .alert(
             "정말 삭제하시겠습니까?",
             isPresented: $isAlertPresenting,
@@ -51,8 +53,14 @@ struct MusicListView: View {
                 removeTargetMusic = nil
             }
         }
+        .toolbar {
+            EditButton() //편집 모드 활성화
+        }
     }
-
+    private func moveMusic(from source: IndexSet, to destination: Int) {
+        playlistDetailViewModel.moveMusic(fromOffsets: source, toOffset: destination)
+    }
+    
     private func deleteMusic(music: MolioMusic) {
         playlistDetailViewModel.deleteMusic(music: music)
         audioPlayerViewModel.musics = playlistDetailViewModel.currentPlaylistMusics
