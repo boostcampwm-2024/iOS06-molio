@@ -6,7 +6,8 @@ struct MusicListView: View {
     
     @State private var isAlertPresenting: Bool = false
     @State private var removeTargetMusic: MolioMusic?
-
+    @Environment(\.editMode) private var editMode
+    
     var body: some View {
         List {
             ForEach(audioPlayerViewModel.musics, id: \.isrc) { rowMusic in
@@ -33,6 +34,11 @@ struct MusicListView: View {
                         .tint(.red)
                     }
             }
+            .onMove{ from, to in
+                if editMode?.wrappedValue == .active { // ✅ 편집 모드일 때만 순서 변경 가능
+                    moveMusic(from: from, to: to)
+                }
+            }
         }
         .foregroundStyle(.white)
         .listStyle(.plain)
@@ -51,8 +57,15 @@ struct MusicListView: View {
                 removeTargetMusic = nil
             }
         }
+        .toolbar {
+            EditButton() // 편집 모드 활성화
+                .foregroundColor(editMode?.wrappedValue == .active ? .main : .gray)
+        }
     }
-
+    private func moveMusic(from source: IndexSet, to destination: Int) {
+        playlistDetailViewModel.moveMusic(fromOffsets: source, toOffset: destination)
+    }
+    
     private func deleteMusic(music: MolioMusic) {
         playlistDetailViewModel.deleteMusic(music: music)
         audioPlayerViewModel.musics = playlistDetailViewModel.currentPlaylistMusics
